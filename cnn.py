@@ -5,6 +5,12 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
+import tensorflow as tf
+
+# import os
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 batch_size = 128
 num_classes = 10
@@ -34,24 +40,37 @@ print(x_train.shape[0], 'train samples')
 print(x_test.shape[0], 'test samples')
 
 
-
-'''
 # convert class vectors to binary class matrices
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
+print('input_shape: ', input_shape)
+
 model = Sequential()
+# (28, 28, 1)
 model.add(Conv2D(32, kernel_size=(3, 3),
                  activation='relu',
                  input_shape=input_shape))
+# (None, 26, 26, 32)
 model.add(Conv2D(64, (3, 3), activation='relu'))
+# (None, 24, 24, 64)
 model.add(MaxPooling2D(pool_size=(2, 2)))
+# (None, 12, 12, 64)
 model.add(Dropout(0.25))
+# (None, 12, 12, 64)
 model.add(Flatten())
+# (None, 9216)
 model.add(Dense(128, activation='relu'))
+# (None, 128)
 model.add(Dropout(0.5))
+# (None, 128)
 model.add(Dense(num_classes, activation='softmax'))
-
+# (None, 10)
+i = 0
+for layer in model.layers:
+    print('-----------{0}: {1}'.format(i, layer.output_shape))
+    i += 1
+'''
 model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer=keras.optimizers.Adadelta(),
               metrics=['accuracy'])
