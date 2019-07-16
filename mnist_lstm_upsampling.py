@@ -6,7 +6,7 @@ after we get prediction, we use upsampling for binary_corssentropy loss
 import tensorflow as tf
 from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM
 from tensorflow.keras.layers import Flatten, Activation, Reshape
-from tensorflow.keras.layers import Conv1D, MaxPooling1D
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, UpSampling1D
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.layers import LeakyReLU
@@ -36,7 +36,7 @@ x_test /= 255
 print('x_train shape:', x_train.shape)
 print(x_train.shape[0], 'train samples')
 print(x_test.shape[0], 'test samples')
-print('input_shape: ', input_shape)
+# print('input_shape: ', input_shape)
 
 model = Sequential()
 # (28, 1)
@@ -44,7 +44,7 @@ model.add(Conv1D(32, kernel_size=3,
                  activation='relu',
                  input_shape=(28, 1)))
 # (None, 26, 32)
-model.add(Conv1D(64,  3, activation='relu'))
+model.add(Conv1D(64,  kernel_size=3, activation='relu'))
 # (None, 24, 64)
 model.add(MaxPooling1D(pool_size=2))
 # (None, 12, 64)
@@ -65,16 +65,35 @@ lstm_model.add(LSTM(1024, batch_input_shape=(32, 1, 768), dropout=0.15, return_s
 lstm_model.add(BatchNormalization())
 lstm_model.add(Dense(768))
 
-
 lstm_model.add(Reshape((28, 12, 64)))
 
+# print(lstm_model.summary())
 
 
+upsample_model = Sequential()
+upsample_model.add(Conv2D(32, kernel_size=(1, 3), activation='relu', input_shape=(28, 12, 64)))
+upsample_model.add(UpSampling2D((1, 3)))
+upsample_model.add(Conv2D(1, kernel_size=(1, 3), activation='sigmoid'))
 
-
-print(lstm_model.summary())
 
 series_input = Input(shape=(28, 28, 1))
+
 encoded_series_input = TimeDistributed(model)(series_input)
+
 series_output = lstm_model(encoded_series_input)
-cnn_lstm_model = Model(inputs = series_input, outputs = series_output)
+
+final_output = upsample_model(series_output)
+
+cnn_lstm_model = Model(inputs = series_input, outputs = final_output)
+print(series_input.shape)
+print(final_output.shape)
+print(upsample_model.summary())
+
+cnn_lstm_model.compile(optimizer='adadelta', loss='binary_crossentropy', metrics=['accuracy'])
+
+cnn_lstm_model.fit(x_train, x_train,
+                    epochs=3, batch_size=32,
+                    shuffle=True,
+                    validation_data=(x_test, x_test))
+
+

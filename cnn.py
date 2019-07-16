@@ -52,7 +52,7 @@ model.add(Conv2D(32, kernel_size=(3, 3),
                  activation='relu',
                  input_shape=input_shape))
 # (None, 26, 26, 32)
-model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 # (None, 24, 24, 64)
 model.add(MaxPooling2D(pool_size=(2, 2)))
 # (None, 12, 12, 64)
@@ -66,10 +66,9 @@ model.add(Dropout(0.5))
 # (None, 128)
 model.add(Dense(num_classes, activation='softmax'))
 # (None, 10)
-i = 0
-for layer in model.layers:
-    print('-----------{0}: {1}'.format(i, layer.output_shape))
-    i += 1
+
+print(model.summary())
+
 '''
 model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer=keras.optimizers.Adadelta(),
