@@ -1,0 +1,20 @@
+  # Dir #
+###################
+.venv/
+.vscode/
+__pycache__/
+tmp/
+
+settings.json
+
+test.py
+
+*.zip
+
+*.png
+
+test*.py
+
+*.npy
+
+log.*
