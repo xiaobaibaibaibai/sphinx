@@ -22,6 +22,8 @@ x_test = x_test/255.0
 
 print(x_train.shape)
 print(x_train[0].shape)
+print(x_train.shape[1:])
+
 
 model = Sequential()
 model.add(LSTM(128, input_shape=(x_train.shape[1:]), activation='relu', return_sequences=True))

@@ -4,6 +4,7 @@ after we get prediction, we use upsampling for binary_corssentropy loss
 '''
 
 import tensorflow as tf
+from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM
 from tensorflow.keras.layers import Flatten, Activation, Reshape
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, UpSampling1D
@@ -36,66 +37,55 @@ x_test /= 255
 print('x_train shape:', x_train.shape)
 print(x_train.shape[0], 'train samples')
 print(x_test.shape[0], 'test samples')
-# print('input_shape: ', input_shape)
+print('input_shape: ', input_shape)
 
-model = Sequential()
+cnn_model = Sequential()
 # (28, 1)
-model.add(Conv1D(32, kernel_size=3,
+cnn_model.add(Conv1D(32, kernel_size=3,
                  activation='relu',
                  input_shape=(28, 1)))
-# (None, 26, 32)
-model.add(Conv1D(64,  kernel_size=3, activation='relu'))
-# (None, 24, 64)
-model.add(MaxPooling1D(pool_size=2))
-# (None, 12, 64)
-model.add(Dropout(0.25))
-# (None, 12, 64)
+cnn_model.add(MaxPooling1D(pool_size=2))
+cnn_model.add(Conv1D(64,  kernel_size=3, activation='relu'))
+cnn_model.add(MaxPooling1D(pool_size=2))
+cnn_model.add(Dropout(0.25))
 
-model.add(Flatten())
-model.add(Dense(768))
-model.add(LeakyReLU(alpha=.001))
-model.add(Dropout(0.25))
-# (None, 768)
+cnn_model.add(Flatten())
+cnn_model.add(Dense(512))
+cnn_model.add(LeakyReLU(alpha=.001))
+cnn_model.add(Dropout(0.25))
 
-# print(model.summary())
+# print(cnn_model.summary())
+
+timesteps = 4
 
 lstm_model = Sequential()
-lstm_model.add(Reshape((28, 768), input_shape=(28, 768)))
-lstm_model.add(LSTM(1024, batch_input_shape=(32, 1, 768), dropout=0.15, return_sequences=True))
+lstm_model.add(Reshape((28, 512), input_shape=(28, 512)))
+lstm_model.add(LSTM(1024, input_shape=(timesteps, 512), dropout=0.15, return_sequences=True))
 lstm_model.add(BatchNormalization())
-lstm_model.add(Dense(768))
+lstm_model.add(LSTM(512, dropout=0.15, return_sequences=True))
+lstm_model.add(Dense(256))
 
-lstm_model.add(Reshape((28, 12, 64)))
-
-# print(lstm_model.summary())
+# lstm_model.summary()
 
 
 upsample_model = Sequential()
-upsample_model.add(Conv2D(32, kernel_size=(1, 3), activation='relu', input_shape=(28, 12, 64)))
-upsample_model.add(UpSampling2D((1, 3)))
+upsample_model.add(Reshape((28, 32, 8), input_shape=(28, 256)))
+upsample_model.add(Conv2D(4, kernel_size=(1, 3), activation='relu'))
 upsample_model.add(Conv2D(1, kernel_size=(1, 3), activation='sigmoid'))
 
+# upsample_model.summary()
 
-series_input = Input(shape=(28, 28, 1))
+cnn_input = Input(shape=(28, 28, 1))
+lstm_input = TimeDistributed(cnn_model)(cnn_input)
+lstm_output = lstm_model(lstm_input)
+final_output = upsample_model(lstm_output)
 
-encoded_series_input = TimeDistributed(model)(series_input)
-
-'''
-series_output = lstm_model(encoded_series_input)
-
-final_output = upsample_model(series_output)
-
-cnn_lstm_model = Model(inputs = series_input, outputs = final_output)
-print(series_input.shape)
-print(final_output.shape)
-print(upsample_model.summary())
+cnn_lstm_model = Model(inputs = cnn_input, outputs = final_output)
 
 cnn_lstm_model.compile(optimizer='adadelta', loss='binary_crossentropy', metrics=['accuracy'])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=3, batch_size=32,
+                    epochs=5, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test))
 
-
-'''
