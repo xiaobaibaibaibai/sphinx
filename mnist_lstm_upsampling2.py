@@ -57,7 +57,7 @@ cnn_model.add(BatchNormalization())
 cnn_model.add(LeakyReLU(alpha=.001))
 cnn_model.add(Dropout(0.25))
 
-cnn_model.summary()
+# cnn_model.summary()
 
 timesteps = 4
 
@@ -83,7 +83,7 @@ upsample_model.add(BatchNormalization())
 upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4)))
 
 upsample_model.summary()
-
+'''
 cnn_input = Input(shape=(28, 28, 1))
 lstm_input = TimeDistributed(cnn_model)(cnn_input)
 lstm_output = lstm_model(lstm_input)
@@ -110,3 +110,4 @@ cnn_lstm_model.fit(x_train, x_train,
                     shuffle=True,
                     validation_data=(x_test, x_test))
 
+'''

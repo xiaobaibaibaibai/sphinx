@@ -3,8 +3,10 @@ after we get prediction, we use upsampling for binary_corssentropy loss
 # model.compile(optimizer='adadelta', loss='binary_crossentropy', metrics=['accuracy'])
 '''
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM
+from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM, Conv2DTranspose
 from tensorflow.keras.layers import Flatten, Activation, Reshape
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, UpSampling1D
 from tensorflow.keras.models import Model, Sequential
@@ -24,78 +26,87 @@ img_rows, img_cols = 28, 28
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-input_shape = (img_rows, img_cols, 1)
+x_train = x_train.reshape(x_train.shape[0], 4, 7, 7, 4)
+x_test = x_test.reshape(x_test.shape[0], 4, 7, 7, 4)
+input_shape = (4, 7, 7, 4)
 
+# x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
+# x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
+# input_shape = (img_rows, img_cols, 1)
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 x_train /= 255
 x_test /= 255
-print('x_train shape:', x_train.shape)
-print(x_train.shape[0], 'train samples')
-print(x_test.shape[0], 'test samples')
-# print('input_shape: ', input_shape)
+print('train samples: ', x_train.shape)
+print('test samples, ', x_test.shape)
+print('input_shape: ', input_shape)
 
-model = Sequential()
-# (28, 1)
-model.add(Conv1D(32, kernel_size=3,
+
+cnn_model = Sequential()
+# (7, 7, 4)
+cnn_model.add(Conv2D(4, kernel_size=(2, 2),
                  activation='relu',
-                 input_shape=(28, 1)))
-# (None, 26, 32)
-model.add(Conv1D(64,  kernel_size=3, activation='relu'))
-# (None, 24, 64)
-model.add(MaxPooling1D(pool_size=2))
-# (None, 12, 64)
-model.add(Dropout(0.25))
-# (None, 12, 64)
+                 input_shape=(7, 7, 4)))
+cnn_model.add(MaxPooling2D(pool_size=(2,2)))
+cnn_model.add(Conv2D(4, kernel_size=(2, 2), activation='relu'))
+cnn_model.add(MaxPooling2D(pool_size=(2,2)))
+cnn_model.add(Flatten())
 
-model.add(Flatten())
-model.add(Dense(768))
-model.add(LeakyReLU(alpha=.001))
-model.add(Dropout(0.25))
-# (None, 768)
+# cnn_model.summary()
 
-# print(model.summary())
 
 lstm_model = Sequential()
-lstm_model.add(Reshape((28, 768), input_shape=(28, 768)))
-lstm_model.add(LSTM(1024, batch_input_shape=(32, 1, 768), dropout=0.15, return_sequences=True))
+lstm_model.add(LSTM(8, input_shape=(4, 4), dropout=0.15, return_sequences=True))
 lstm_model.add(BatchNormalization())
-lstm_model.add(Dense(768))
+lstm_model.add(LSTM(32, dropout=0.15, return_sequences=False))
+lstm_model.add(Dense(128))
+lstm_model.add(BatchNormalization())
+lstm_model.add(LeakyReLU(alpha=.001))
+lstm_model.add(Dense(256))
+lstm_model.add(BatchNormalization())
+lstm_model.add(LeakyReLU(alpha=.001))
+# lstm_model.summary()
 
-lstm_model.add(Reshape((28, 12, 64)))
-
-# print(lstm_model.summary())
 
 
 upsample_model = Sequential()
-upsample_model.add(Conv2D(32, kernel_size=(1, 3), activation='relu', input_shape=(28, 12, 64)))
-upsample_model.add(UpSampling2D((1, 3)))
-upsample_model.add(Conv2D(1, kernel_size=(1, 3), activation='sigmoid'))
+upsample_model.add(Reshape((16, 16, 1), input_shape=(1, 256)))
+upsample_model.add(Conv2DTranspose(16, kernel_size=(4, 4), activation='relu'))
+upsample_model.add(BatchNormalization())
+upsample_model.add(Conv2DTranspose(32, kernel_size=(4, 4), activation='relu'))
+upsample_model.add(BatchNormalization())
+upsample_model.add(Conv2DTranspose(16, kernel_size=(4, 4), activation='relu'))
+upsample_model.add(BatchNormalization())
+upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4)))
+upsample_model.add(Reshape((4, 7, 7, 4)))
+upsample_model.summary()
 
 
-series_input = Input(shape=(28, 28, 1))
 
-encoded_series_input = TimeDistributed(model)(series_input)
+cnn_input = Input(shape=(4, 7, 7, 4))
+lstm_input = TimeDistributed(cnn_model)(cnn_input)
+lstm_output = lstm_model(lstm_input)
+final_output = upsample_model(lstm_output)
 
-'''
-series_output = lstm_model(encoded_series_input)
+cnn_lstm_model = Model(inputs=cnn_input, outputs=final_output)
 
-final_output = upsample_model(series_output)
+def weighted_binary_crossentropy(weights):
+    def w_binary_crossentropy(y_true, y_pred):
+        return tf.keras.backend.mean(tf.nn.weighted_cross_entropy_with_logits(
+            y_true,
+            y_pred,
+            weights,
+            name=None
+        ), axis=-1)
+    return w_binary_crossentropy
 
-cnn_lstm_model = Model(inputs = series_input, outputs = final_output)
-print(series_input.shape)
-print(final_output.shape)
-print(upsample_model.summary())
+weighted_loss = weighted_binary_crossentropy(weights=5)
 
-cnn_lstm_model.compile(optimizer='adadelta', loss='binary_crossentropy', metrics=['accuracy'])
+cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[tf.keras.metrics.Precision()])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=3, batch_size=32,
+                    epochs=5, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test))
 
-
-'''
