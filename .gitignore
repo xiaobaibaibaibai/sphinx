@@ -18,3 +18,4 @@ test*.py
 *.npy
 
 log.*
+.DS_Store
