@@ -78,9 +78,10 @@ upsample_model.add(Conv2DTranspose(32, kernel_size=(4, 4), activation='relu'))
 upsample_model.add(BatchNormalization())
 upsample_model.add(Conv2DTranspose(16, kernel_size=(4, 4), activation='relu'))
 upsample_model.add(BatchNormalization())
-upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4)))
+upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4), activation='relu'))
+upsample_model.add(BatchNormalization())
 upsample_model.add(Reshape((4, 7, 7, 4)))
-upsample_model.summary()
+# upsample_model.summary()
 
 
 
@@ -106,7 +107,7 @@ weighted_loss = weighted_binary_crossentropy(weights=5)
 cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[tf.keras.metrics.Precision()])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=5, batch_size=32,
+                    epochs=25, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test))
 
