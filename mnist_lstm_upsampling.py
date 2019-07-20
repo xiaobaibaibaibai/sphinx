@@ -4,8 +4,9 @@ after we get prediction, we use upsampling for binary_corssentropy loss
 '''
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 import tensorflow as tf
+from tensorflow.python.ops import math_ops
 from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM, Conv2DTranspose
 from tensorflow.keras.layers import Flatten, Activation, Reshape
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, UpSampling1D
@@ -13,6 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import BatchNormalization
+from keras import backend as K
 
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.callbacks import TensorBoard
@@ -104,7 +106,24 @@ def weighted_binary_crossentropy(weights):
 
 weighted_loss = weighted_binary_crossentropy(weights=5)
 
-cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[tf.keras.metrics.Precision()])
+
+def precision(y_true, y_pred):	
+    """Precision metric.	ss
+     Only computes a batch-wise average of precision.	
+     Computes the precision, a metric for multi-label classification of	
+    how many selected items are relevant.	
+    """	
+    y_true = math_ops.cast(y_true, 'float32')
+    y_pred = math_ops.cast(y_pred, 'float32')
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))	
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))	
+    precision = true_positives / (predicted_positives + K.epsilon())	
+    return precision
+
+def mean_pred(y_true, y_pred):
+    return K.mean(y_pred)
+
+cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=['accuracy', precision])
 
 cnn_lstm_model.fit(x_train, x_train,
                     epochs=25, batch_size=32,
