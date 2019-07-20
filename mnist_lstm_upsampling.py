@@ -4,7 +4,7 @@ after we get prediction, we use upsampling for binary_corssentropy loss
 '''
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="2"
+# os.environ["CUDA_VISIBLE_DEVICES"]="2"
 import tensorflow as tf
 from tensorflow.python.ops import math_ops
 from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM, Conv2DTranspose
@@ -20,7 +20,7 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.callbacks import TensorBoard
 import numpy as np
 
-tf.logging.set_verbosity(tf.logging.ERROR)
+# tf.logging.set_verbosity(tf.logging.ERROR)
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -107,6 +107,14 @@ def weighted_binary_crossentropy(weights):
 weighted_loss = weighted_binary_crossentropy(weights=5)
 
 
+def recall(y_true, y_pred):
+    y_true = math_ops.cast(y_true, 'float32')
+    y_pred = math_ops.cast(y_pred, 'float32')
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
 def precision(y_true, y_pred):	
     """Precision metric.	ss
      Only computes a batch-wise average of precision.	
@@ -120,13 +128,11 @@ def precision(y_true, y_pred):
     precision = true_positives / (predicted_positives + K.epsilon())	
     return precision
 
-def mean_pred(y_true, y_pred):
-    return K.mean(y_pred)
 
-cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=['accuracy', precision])
+cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=['accuracy', recall])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=25, batch_size=32,
+                    epochs=20, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test))
 
