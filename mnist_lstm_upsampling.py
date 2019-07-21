@@ -19,7 +19,7 @@ from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from keras import backend as K
 import numpy as np
 
-tf.logging.set_verbosity(tf.logging.ERROR)/
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -27,6 +27,7 @@ img_rows, img_cols = 28, 28
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
+# x_train = x_train[:1000]
 # x_train = x_train.reshape(x_train.shape[0], 4, 7, 7, 4)
 # x_test = x_test.reshape(x_test.shape[0], 4, 7, 7, 4)
 # input_shape = (4, 7, 7, 4)
@@ -121,7 +122,7 @@ def recall(y_true, y_pred):
 cus_callback = []
 cus_callback.append(
     ModelCheckpoint(
-        filepath=os.path.join('checkpoints','uav-{epoch:02d}-{val_acc:.2f}.hdf5'),
+        filepath=os.path.join("checkpoints","uav-{epoch:02d}-{val_recall:.2f}.hdf5"),
         monitor='val_recall',
         mode='auto',
         save_best_only=True,
