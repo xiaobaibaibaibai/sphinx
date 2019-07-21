@@ -18,10 +18,9 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from keras import backend as K
 import numpy as np
+import cv2
 
 tf.logging.set_verbosity(tf.logging.ERROR)
-
-import cv2
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -54,18 +53,17 @@ cnn_model.add(Conv2D(4, kernel_size=(2, 2),
                  activation='relu',
                  input_shape=(7, 7, 4)))
 cnn_model.add(MaxPooling2D(pool_size=(2,2)))
-cnn_model.add(Conv2D(4, kernel_size=(2, 2), activation='relu'))
-cnn_model.add(MaxPooling2D(pool_size=(2,2)))
+# cnn_model.add(Conv2D(4, kernel_size=(2, 2), activation='relu'))
+# cnn_model.add(MaxPooling2D(pool_size=(2,2)))
 cnn_model.add(Flatten())
-
 # cnn_model.summary()
 
 
 lstm_model = Sequential()
-lstm_model.add(LSTM(8, input_shape=(4, 4), dropout=0.15, return_sequences=True))
+lstm_model.add(LSTM(72, input_shape=(4, 36), dropout=0.15, return_sequences=True))
 lstm_model.add(BatchNormalization())
-lstm_model.add(LSTM(32, dropout=0.15, return_sequences=False))
-lstm_model.add(Dense(128))
+lstm_model.add(LSTM(128, dropout=0.15, return_sequences=False))
+lstm_model.add(Dense(256))
 lstm_model.add(BatchNormalization())
 lstm_model.add(LeakyReLU(alpha=.001))
 lstm_model.add(Dense(256))
@@ -133,7 +131,7 @@ cus_callback.append(
     )
 )
 
-cnn_lstm_model.load_weights('checkpoints/uav-01-0.90.hdf5')
+cnn_lstm_model.load_weights('checkpoints/uav-01-1.06.hdf5')
 
 cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
 

@@ -85,7 +85,7 @@ upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4), activation='relu'))
 upsample_model.add(BatchNormalization())
 upsample_model.add(Reshape((4, 7, 7, 4)))
 upsample_model.add(Reshape((28, 28)))
-upsample_model.summary()
+# upsample_model.summary()
 
 
 # cnn_input = Input(shape=(4, 7, 7, 4))
