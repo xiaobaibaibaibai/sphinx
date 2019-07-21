@@ -17,6 +17,7 @@ from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from keras import backend as K
+import keras
 import numpy as np
 
 tf.logging.set_verbosity(tf.logging.ERROR)
@@ -146,11 +147,22 @@ def f1(y_true, y_pred):
     f1 = tf.where(tf.is_nan(f1), tf.zeros_like(f1), f1)
     return K.mean(f1)
 
-class Metrics(keras.callbacks.Callback):
-    def on_epoch_end(self, batch, logs={}):
-        predict = np.asarray(self.model.predict(self.validation_data[0]))
-        targ = self.validation_data[1]
-        self.f1s=f1(y_true=targ, y_pred=predict)
+class Metrics(Callback):
+    def on_train_begin(self, logs={}):
+        self.val_f1s = []
+        self.val_recalls = []
+        self.val_precisions = []
+ 
+    def on_epoch_end(self, epoch, logs={}):
+        val_predict = (np.asarray(self.model.predict(self.model.validation_data[0]))).round()
+        val_targ = self.model.validation_data[1]
+        _val_f1 = f1_score(val_targ, val_predict)
+        _val_recall = recall_score(val_targ, val_predict)
+        _val_precision = precision_score(val_targ, val_predict)
+        self.val_f1s.append(_val_f1)
+        self.val_recalls.append(_val_recall)
+        self.val_precisions.append(_val_precision)
+        print (" — val_f1: %f — val_precision: %f — val_recall %f" %(_val_f1, _val_precision, _val_recall) )
         return
 
 metrics = Metrics()
