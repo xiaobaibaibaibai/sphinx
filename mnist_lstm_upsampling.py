@@ -122,23 +122,24 @@ def recall(y_true, y_pred):
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
-def precision(y_true, y_pred):	
-    """Precision metric.	ss
-     Only computes a batch-wise average of precision.	
-     Computes the precision, a metric for multi-label classification of	
-    how many selected items are relevant.	
-    """	
-    y_true = math_ops.cast(y_true, 'float32')
-    y_pred = math_ops.cast(y_pred, 'float32')
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))	
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))	
-    precision = true_positives / (predicted_positives + K.epsilon())	
-    return precision
-
+cus_callback = []
+cus_callback.append(
+    ModelCheckpoint(
+        filepath=os.path.join('checkpoints','uav-{epoch:02d}-{val_acc:.2f}.hdf5'),
+        monitor='val_recall',
+        mode='auto',
+        save_best_only=True,
+        save_weights_only=True,
+        verbose=True
+    )
+)
 
 cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
 
 cnn_lstm_model.fit(x_train, x_train,
                     epochs=1, batch_size=32,
                     shuffle=True,
-                    validation_data=(x_test, x_test))
+                    validation_data=(x_test, x_test),
+                    callbacks=cus_callback)
+
+
