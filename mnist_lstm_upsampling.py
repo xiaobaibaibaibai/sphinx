@@ -52,18 +52,17 @@ cnn_model.add(Conv2D(4, kernel_size=(2, 2),
                  activation='relu',
                  input_shape=(7, 7, 4)))
 cnn_model.add(MaxPooling2D(pool_size=(2,2)))
-cnn_model.add(Conv2D(4, kernel_size=(2, 2), activation='relu'))
-cnn_model.add(MaxPooling2D(pool_size=(2,2)))
+# cnn_model.add(Conv2D(4, kernel_size=(2, 2), activation='relu'))
+# cnn_model.add(MaxPooling2D(pool_size=(2,2)))
 cnn_model.add(Flatten())
-
 # cnn_model.summary()
 
 
 lstm_model = Sequential()
-lstm_model.add(LSTM(8, input_shape=(4, 4), dropout=0.15, return_sequences=True))
+lstm_model.add(LSTM(72, input_shape=(4, 36), dropout=0.15, return_sequences=True))
 lstm_model.add(BatchNormalization())
-lstm_model.add(LSTM(32, dropout=0.15, return_sequences=False))
-lstm_model.add(Dense(128))
+lstm_model.add(LSTM(128, dropout=0.15, return_sequences=False))
+lstm_model.add(Dense(256))
 lstm_model.add(BatchNormalization())
 lstm_model.add(LeakyReLU(alpha=.001))
 lstm_model.add(Dense(256))
@@ -85,7 +84,7 @@ upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4), activation='relu'))
 upsample_model.add(BatchNormalization())
 upsample_model.add(Reshape((4, 7, 7, 4)))
 upsample_model.add(Reshape((28, 28)))
-# upsample_model.summary()
+upsample_model.summary()
 
 
 # cnn_input = Input(shape=(4, 7, 7, 4))
