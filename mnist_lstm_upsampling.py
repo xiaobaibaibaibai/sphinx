@@ -28,13 +28,13 @@ img_rows, img_cols = 28, 28
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-x_train = x_train.reshape(x_train.shape[0], 4, 7, 7, 4)
-x_test = x_test.reshape(x_test.shape[0], 4, 7, 7, 4)
-input_shape = (4, 7, 7, 4)
+# x_train = x_train.reshape(x_train.shape[0], 4, 7, 7, 4)
+# x_test = x_test.reshape(x_test.shape[0], 4, 7, 7, 4)
+# input_shape = (4, 7, 7, 4)
 
-# x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-# x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-# input_shape = (img_rows, img_cols, 1)
+x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols)
+x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols)
+input_shape = (img_rows, img_cols)
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
@@ -42,10 +42,11 @@ x_train /= 255
 x_test /= 255
 print('train samples: ', x_train.shape)
 print('test samples, ', x_test.shape)
-print('input_shape: ', input_shape)
+# print('input_shape: ', input_shape)
 
 
 cnn_model = Sequential()
+
 # (7, 7, 4)
 cnn_model.add(Conv2D(4, kernel_size=(2, 2),
                  activation='relu',
@@ -83,12 +84,18 @@ upsample_model.add(BatchNormalization())
 upsample_model.add(Conv2DTranspose(1, kernel_size=(4, 4), activation='relu'))
 upsample_model.add(BatchNormalization())
 upsample_model.add(Reshape((4, 7, 7, 4)))
+upsample_model.add(Reshape((28, 28)))
 # upsample_model.summary()
 
 
 
-cnn_input = Input(shape=(4, 7, 7, 4))
-lstm_input = TimeDistributed(cnn_model)(cnn_input)
+
+
+# cnn_input = Input(shape=(4, 7, 7, 4))
+
+cnn_input = Input(shape=(28, 28))
+cnn_input1 = Reshape(target_shape=(4, 7, 7, 4))(cnn_input)
+lstm_input = TimeDistributed(cnn_model)(cnn_input1)
 lstm_output = lstm_model(lstm_input)
 final_output = upsample_model(lstm_output)
 
@@ -129,10 +136,9 @@ def precision(y_true, y_pred):
     return precision
 
 
-cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=['accuracy', recall])
+cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=20, batch_size=32,
+                    epochs=1, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test))
-
