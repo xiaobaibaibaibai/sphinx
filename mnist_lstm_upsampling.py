@@ -130,7 +130,35 @@ cus_callback.append(
     )
 )
 
-cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
+
+
+def f1(y_true, y_pred):
+    y_pred = K.round(y_pred)
+    tp = K.sum(K.cast(y_true*y_pred, 'float'), axis=0)
+    # tn = K.sum(K.cast((1-y_true)*(1-y_pred), 'float'), axis=0)
+    fp = K.sum(K.cast((1-y_true)*y_pred, 'float'), axis=0)
+    fn = K.sum(K.cast(y_true*(1-y_pred), 'float'), axis=0)
+
+    p = tp / (tp + fp + K.epsilon())
+    r = tp / (tp + fn + K.epsilon())
+
+    f1 = 2*p*r / (p+r+K.epsilon())
+    f1 = tf.where(tf.is_nan(f1), tf.zeros_like(f1), f1)
+    return K.mean(f1)
+
+class Metrics(keras.callbacks.Callback):
+    def on_epoch_end(self, batch, logs={}):
+        predict = np.asarray(self.model.predict(self.validation_data[0]))
+        targ = self.validation_data[1]
+        self.f1s=f1(y_true=targ, y_pred=predict)
+        return
+
+metrics = Metrics()
+cus_callback.append(metrics)
+
+
+# cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
+cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss)
 
 cnn_lstm_model.fit(x_train, x_train,
                     epochs=20, batch_size=32,
