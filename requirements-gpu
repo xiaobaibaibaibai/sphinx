@@ -1,3 +1,4 @@
+opencv-python
 numpy
 pylint
 tensorflow-gpu==1.13.1

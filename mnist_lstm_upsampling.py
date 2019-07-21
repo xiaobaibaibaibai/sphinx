@@ -134,7 +134,7 @@ cus_callback.append(
 cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=1, batch_size=32,
+                    epochs=20, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test),
                     callbacks=cus_callback)
