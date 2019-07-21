@@ -4,7 +4,7 @@ after we get prediction, we use upsampling for binary_corssentropy loss
 '''
 
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"]="2"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 import tensorflow as tf
 from tensorflow.python.ops import math_ops
 from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM, Conv2DTranspose
@@ -14,13 +14,12 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import BatchNormalization
-from keras import backend as K
-
 from tensorflow.keras.datasets import mnist
-from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+from keras import backend as K
 import numpy as np
 
-# tf.logging.set_verbosity(tf.logging.ERROR)
+tf.logging.set_verbosity(tf.logging.ERROR)/
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -86,9 +85,6 @@ upsample_model.add(BatchNormalization())
 upsample_model.add(Reshape((4, 7, 7, 4)))
 upsample_model.add(Reshape((28, 28)))
 # upsample_model.summary()
-
-
-
 
 
 # cnn_input = Input(shape=(4, 7, 7, 4))
