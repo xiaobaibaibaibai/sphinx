@@ -46,9 +46,11 @@ print('test samples, ', x_test.shape)
 cnn_model = Sequential()
 
 # (7, 7, 4)
-cnn_model.add(Conv2D(4, kernel_size=(2, 2),
+cnn_model.add(Conv2D(8, kernel_size=(2, 2),
                  activation='relu',
                  input_shape=(7, 7, 4)))
+cnn_model.add(Conv2D(16, kernel_size=(1, 1), activation='relu'))
+cnn_model.add(Conv2D(32, kernel_size=(1, 1), activation='relu'))
 cnn_model.add(MaxPooling2D(pool_size=(2,2)))
 # cnn_model.add(Conv2D(4, kernel_size=(2, 2), activation='relu'))
 # cnn_model.add(MaxPooling2D(pool_size=(2,2)))
@@ -57,10 +59,10 @@ cnn_model.add(Flatten())
 
 
 lstm_model = Sequential()
-lstm_model.add(LSTM(72, input_shape=(4, 36), dropout=0.15, return_sequences=True))
+lstm_model.add(LSTM(512, input_shape=(4, 288), dropout=0.15, return_sequences=True))
 lstm_model.add(BatchNormalization())
-lstm_model.add(LSTM(128, dropout=0.15, return_sequences=False))
-lstm_model.add(Dense(256))
+lstm_model.add(LSTM(512, dropout=0.15, return_sequences=False))
+lstm_model.add(Dense(512))
 lstm_model.add(BatchNormalization())
 lstm_model.add(LeakyReLU(alpha=.001))
 lstm_model.add(Dense(256))
@@ -85,7 +87,7 @@ upsample_model.add(Reshape((28, 28)))
 # upsample_model.summary()
 
 
-# cnn_input = Input(shape=(4, 7, 7, 4))
+
 
 cnn_input = Input(shape=(28, 28))
 cnn_input1 = Reshape(target_shape=(4, 7, 7, 4))(cnn_input)
@@ -131,9 +133,8 @@ cus_callback.append(
 cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
 
 cnn_lstm_model.fit(x_train, x_train,
-                    epochs=20, batch_size=32,
+                    epochs=12, batch_size=32,
                     shuffle=True,
                     validation_data=(x_test, x_test),
                     callbacks=cus_callback)
-
 
