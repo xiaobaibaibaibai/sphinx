@@ -7,13 +7,10 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"]="2"
 import tensorflow as tf
 from tensorflow.python.ops import math_ops
-from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Dropout, LSTM, Conv2DTranspose
+from tensorflow.keras.layers import Input, Dense, Conv2D, MaxPooling2D, Conv2DTranspose, Dropout, LSTM
 from tensorflow.keras.layers import Flatten, Activation, Reshape
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, UpSampling1D
 from tensorflow.keras.models import Model, Sequential
-from tensorflow.keras.layers import TimeDistributed
-from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import TimeDistributed, LeakyReLU, BatchNormalization
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from keras import backend as K
@@ -108,7 +105,7 @@ def weighted_binary_crossentropy(weights):
         ), axis=-1)
     return w_binary_crossentropy
 
-weighted_loss = weighted_binary_crossentropy(weights=5)
+weighted_loss = weighted_binary_crossentropy(weights=4)
 
 
 def recall(y_true, y_pred):
@@ -131,46 +128,7 @@ cus_callback.append(
     )
 )
 
-
-
-def f1(y_true, y_pred):
-    y_pred = K.round(y_pred)
-    tp = K.sum(K.cast(y_true*y_pred, 'float'), axis=0)
-    # tn = K.sum(K.cast((1-y_true)*(1-y_pred), 'float'), axis=0)
-    fp = K.sum(K.cast((1-y_true)*y_pred, 'float'), axis=0)
-    fn = K.sum(K.cast(y_true*(1-y_pred), 'float'), axis=0)
-
-    p = tp / (tp + fp + K.epsilon())
-    r = tp / (tp + fn + K.epsilon())
-
-    f1 = 2*p*r / (p+r+K.epsilon())
-    f1 = tf.where(tf.is_nan(f1), tf.zeros_like(f1), f1)
-    return K.mean(f1)
-
-class Metrics(Callback):
-    def on_train_begin(self, logs={}):
-        self.val_f1s = []
-        self.val_recalls = []
-        self.val_precisions = []
- 
-    def on_epoch_end(self, epoch, logs={}):
-        val_predict = (np.asarray(self.model.predict(self.model.validation_data[0]))).round()
-        val_targ = self.model.validation_data[1]
-        _val_f1 = f1_score(val_targ, val_predict)
-        _val_recall = recall_score(val_targ, val_predict)
-        _val_precision = precision_score(val_targ, val_predict)
-        self.val_f1s.append(_val_f1)
-        self.val_recalls.append(_val_recall)
-        self.val_precisions.append(_val_precision)
-        print (" — val_f1: %f — val_precision: %f — val_recall %f" %(_val_f1, _val_precision, _val_recall) )
-        return
-
-metrics = Metrics()
-cus_callback.append(metrics)
-
-
-# cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
-cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss)
+cnn_lstm_model.compile(optimizer='adadelta', loss=weighted_loss, metrics=[recall])
 
 cnn_lstm_model.fit(x_train, x_train,
                     epochs=20, batch_size=32,
